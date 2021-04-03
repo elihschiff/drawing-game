@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+
+<head>
+  <meta charset="utf-8">
+  <title>Drawing Game</title>
+
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0-beta2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-BmbxuPwQa2lc/FVzBcNJ7UAyJxM6wuqIj61tLrc4wSX0szH/Ev+nYRRuWlolflfl" crossorigin="anonymous">
+  <script src="https://cdn.jsdelivr.net/npm/vue@2/dist/vue.js"></script>
+</head>
+
+<body>
+  <div id="app">
+    <div class="container">
+      <div class="row">
+        <div class="col-sm">
+        </div>
+        <div class="col-6-sm">
+          <canvas id="gameBoard" width="700" height="700" style="border:1px solid #d3d3d3;">
+        </div>
+        <div class="col-sm">
+        </div>
+      </div>
+      <div class="row">
+        <div class="col-sm">
+        </div>
+        <div class="col-6-sm">
+          <div class="row">
+            <button v-for="color in colors" class="col color-box btn" :style="{background:color}" @click="setColor(color)">
+              {{color}}
+            </button>
+          </div>
+        </div>
+        <div class="col-sm">
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+<script>
+var app = new Vue({
+  el: '#app',
+  data: {
+    colors: ['red', 'orange', 'yellow', 'lime', 'green', 'aqua', 'blue', 'purple', 'pink', 'saddlebrown', 'gray', 'white', 'black'],
+    isDrawing: false,
+    x: 0,
+    y: 0,
+    color: "black",
+    canvas: null,
+    ctx: null,
+    connection: null,
+  },
+  // created: function() {
+  //   console.log("Starting connection to WebSocket Server")
+  //   this.connection = new WebSocket("ws://localhost:8000")
+  //
+  //   this.connection.onmessage = function(event) {
+  //     console.log(event);
+  //     const msg = JSON.parse(event.data)
+  //     console.log(msg)
+  //     if(msg.type === "draw"){
+  //       if(msg.shape === "line"){
+  //         this.drawLine(msg.x1, msg.y1, msg.x2, msg.y2)
+  //       }
+  //     }
+  //   }
+  //
+  //   this.connection.onopen = function(event) {
+  //     console.log(event)
+  //     console.log("Successfully connected to the echo websocket server...")
+  //   }
+  //
+  // },
+  methods: {
+    init() {
+      this.canvas = document.getElementById('gameBoard');
+      this.ctx = this.canvas.getContext('2d');
+      // Add the event listeners for mousedown, mousemove, and mouseup
+      this.canvas.addEventListener('mousedown', e => {
+        this.x = e.offsetX;
+        this.y = e.offsetY;
+        this.isDrawing = true;
+      });
+
+      this.canvas.addEventListener('mousemove', e => {
+        if (this.isDrawing === true) {
+          this.drawLine(this.x, this.y, e.offsetX, e.offsetY, this.color);
+          this.x = e.offsetX;
+          this.y = e.offsetY;
+        }
+      });
+
+      window.addEventListener('mouseup', e => {
+        if (this.isDrawing === true) {
+          this.drawLine(this.x, this.y, e.offsetX, e.offsetY, this.color);
+          this.x = 0;
+          this.y = 0;
+          this.isDrawing = false;
+        }
+      });
+
+      // WebSocket code
+      console.log("Starting connection to WebSocket Server")
+      this.connection = new WebSocket("ws://localhost:8000")
+
+      this.connection.onmessage = function(event) {
+        // console.log(event);
+        const msg = JSON.parse(event.data)
+        // console.log(msg)
+        if(msg.type === "draw"){
+          if(msg.shape === "line"){
+            this.drawLine(msg.x1, msg.y1, msg.x2, msg.y2, msg.color, send=false)
+          }
+        }
+      }.bind(this)
+
+      this.connection.onopen = function(event) {
+        console.log(event)
+        console.log("Successfully connected to the echo websocket server...")
+      }.bind(this)
+    },
+    drawLine(x1, y1, x2, y2, color, send=true) {
+      this.ctx.beginPath();
+      this.ctx.strokeStyle = color;
+      this.ctx.lineWidth = 3;
+      this.ctx.moveTo(x1, y1);
+      this.ctx.lineTo(x2, y2);
+      this.ctx.stroke();
+      this.ctx.closePath();
+
+      if(!send) return
+
+      this.connection.send(JSON.stringify({
+        type: "draw",
+        shape: "line",
+        x1,
+        y1,
+        x2,
+        y2,
+        color,
+      }))
+    },
+    setColor(c) {
+      this.color = c
+    }
+  },
+  mounted() {
+    this.init()
+  }
+})
+</script>
+
+<style>
+.color-box {
+  border: 2px solid black;
+  margin: .1rem;
+  cursor: pointer;
+}
+</style>
+
+</html>
