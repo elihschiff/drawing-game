@@ -13,12 +13,18 @@
   <div id="app">
     <div class="container">
       <div class="row">
-        <div class="col-sm">
+        <div class="col">
         </div>
-        <div class="col-6-sm">
+        <div class="col">
           <canvas id="gameBoard" width="700" height="700" style="border:1px solid #d3d3d3;">
         </div>
-        <div class="col-sm">
+        <div class="col chat-col">
+          <input type="text" placeholder="Enter guess here" @keyup.enter="sendmessage()" v-model="currentMessage">
+          <div class="chat-history">
+            <div v-for="msg in messages">
+              <b>{{msg.id}}:</b><br> {{msg.msg}}<hr>
+            </div>
+          </div>
         </div>
       </div>
       <div class="row">
@@ -41,6 +47,7 @@
 var app = new Vue({
   el: '#app',
   data: {
+    id: null,
     colors: ['red', 'orange', 'yellow', 'lime', 'green', 'aqua', 'blue', 'purple', 'pink', 'saddlebrown', 'gray', 'white', 'black'],
     isDrawing: false,
     x: 0,
@@ -49,30 +56,14 @@ var app = new Vue({
     canvas: null,
     ctx: null,
     connection: null,
+    messages: [],
+    currentMessage: "",
   },
-  // created: function() {
-  //   console.log("Starting connection to WebSocket Server")
-  //   this.connection = new WebSocket("ws://localhost:8000")
-  //
-  //   this.connection.onmessage = function(event) {
-  //     console.log(event);
-  //     const msg = JSON.parse(event.data)
-  //     console.log(msg)
-  //     if(msg.type === "draw"){
-  //       if(msg.shape === "line"){
-  //         this.drawLine(msg.x1, msg.y1, msg.x2, msg.y2)
-  //       }
-  //     }
-  //   }
-  //
-  //   this.connection.onopen = function(event) {
-  //     console.log(event)
-  //     console.log("Successfully connected to the echo websocket server...")
-  //   }
-  //
-  // },
   methods: {
     init() {
+      this.id = localStorage.getItem("id") || Math.random().toString().replace("0.", "")
+      localStorage.setItem("id", this.id)
+
       this.canvas = document.getElementById('gameBoard');
       this.ctx = this.canvas.getContext('2d');
       // Add the event listeners for mousedown, mousemove, and mouseup
@@ -107,10 +98,12 @@ var app = new Vue({
         // console.log(event);
         const msg = JSON.parse(event.data)
         // console.log(msg)
-        if(msg.type === "draw"){
-          if(msg.shape === "line"){
-            this.drawLine(msg.x1, msg.y1, msg.x2, msg.y2, msg.color, send=false)
+        if (msg.type === "draw") {
+          if (msg.shape === "line") {
+            this.drawLine(msg.x1, msg.y1, msg.x2, msg.y2, msg.color, send = false)
           }
+        } else if (msg.type === "msg") {
+          this.displaymessage(msg.msg, msg.id)
         }
       }.bind(this)
 
@@ -119,7 +112,12 @@ var app = new Vue({
         console.log("Successfully connected to the echo websocket server...")
       }.bind(this)
     },
-    drawLine(x1, y1, x2, y2, color, send=true) {
+    send(val) {
+      const copy = JSON.parse(JSON.stringify(val))
+      copy.id = this.id
+      this.connection.send(JSON.stringify(copy))
+    },
+    drawLine(x1, y1, x2, y2, color, send = true) {
       this.ctx.beginPath();
       this.ctx.strokeStyle = color;
       this.ctx.lineWidth = 3;
@@ -128,9 +126,9 @@ var app = new Vue({
       this.ctx.stroke();
       this.ctx.closePath();
 
-      if(!send) return
+      if (!send) return
 
-      this.connection.send(JSON.stringify({
+      this.send({
         type: "draw",
         shape: "line",
         x1,
@@ -138,10 +136,27 @@ var app = new Vue({
         x2,
         y2,
         color,
-      }))
+      })
     },
     setColor(c) {
       this.color = c
+    },
+    sendmessage() {
+      if (this.currentMessage === "") {
+        return
+      }
+      this.send({
+        type: "msg",
+        msg: this.currentMessage,
+      })
+      this.displaymessage(this.currentMessage, this.id)
+      this.currentMessage = ""
+    },
+    displaymessage(msg, id) {
+      this.messages.unshift({
+        msg,
+        id,
+      })
     }
   },
   mounted() {
@@ -155,6 +170,11 @@ var app = new Vue({
   border: 2px solid black;
   margin: .1rem;
   cursor: pointer;
+}
+
+.chat-history {
+  overflow-y: scroll;
+  height: 600px;
 }
 </style>
 
