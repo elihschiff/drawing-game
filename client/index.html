@@ -90,9 +90,18 @@ var app = new Vue({
         }
       });
 
-      // WebSocket code
+      this.connect()
+    },
+    connect() {
       console.log("Starting connection to WebSocket Server")
       this.connection = new WebSocket("ws://localhost:8000")
+
+      this.connection.onclose = function(event) {
+        console.log('Socket is closed. Reconnect will be attempted in 1 second.', event.reason);
+        setTimeout(function() {
+          this.connect()
+        }.bind(this), 1000);
+      }.bind(this)
 
       this.connection.onmessage = function(event) {
         // console.log(event);
@@ -110,6 +119,9 @@ var app = new Vue({
       this.connection.onopen = function(event) {
         console.log(event)
         console.log("Successfully connected to the echo websocket server...")
+        // this.send({
+        //   type: "connected",
+        // })
       }.bind(this)
     },
     send(val) {
