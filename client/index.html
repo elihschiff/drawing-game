@@ -16,6 +16,7 @@
         <div class="col">
         </div>
         <div class="col">
+          <p>WORD: {{word}}</p>
           <canvas id="gameBoard" width="700" height="700" style="border:1px solid #d3d3d3;">
         </div>
         <div class="col chat-col">
@@ -58,6 +59,7 @@ var app = new Vue({
     connection: null,
     messages: [],
     currentMessage: "",
+    word: "",
   },
   methods: {
     init() {
@@ -113,7 +115,18 @@ var app = new Vue({
           }
         } else if (msg.type === "msg") {
           this.displaymessage(msg.msg, msg.id)
+        } else if (msg.type === "getwords"){
+          // TODO allow user to pick their word
+          this.word = msg.words[0]
+          console.log(msg.drawer)
+          if(msg.drawer === false){
+            console.log(this.word)
+            //TODO get spaces to work and show up nicely
+            this.word = this.word.replace(/[a-zA-Z0-9]/g, "_ ");
+            console.log(this.word)
+          }
         }
+        console.log(msg)
       }.bind(this)
 
       this.connection.onopen = function(event) {
