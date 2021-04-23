@@ -20,7 +20,7 @@
           <canvas id="gameBoard" width="700" height="700" style="border:1px solid #d3d3d3;">
         </div>
         <div class="col chat-col">
-          <input type="text" placeholder="Enter guess here" @keyup.enter="sendmessage()" v-model="currentMessage">
+          <input type="text" placeholder="Enter guess here" spellcheck="true" @keyup.enter="sendmessage()" v-model="currentMessage">
           <div class="chat-history">
             <div v-for="msg in messages">
               <b>{{msg.id}}:</b><br> {{msg.msg}}<hr>
