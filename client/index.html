@@ -17,13 +17,13 @@
         </div>
         <div class="col">
           <p>WORD: {{word}}</p>
-          <canvas id="gameBoard" width="700" height="700" style="border:1px solid #d3d3d3;">
+          <canvas id="gameBoard" width="700" height="400" style="border:1px solid #d3d3d3;">
         </div>
         <div class="col chat-col">
           <input type="text" placeholder="Enter guess here" spellcheck="true" @keyup.enter="sendmessage()" v-model="currentMessage">
           <div class="chat-history">
             <div v-for="msg in messages">
-              <b>{{msg.id}}:</b><br> {{msg.msg}}<hr>
+              <b>{{msg.id}}:</b><br> <p :style='{color:msg.color, "font-weight":msg.color==="green"?"bold":"null"}'>{{msg.msg}}<p><hr>
             </div>
           </div>
         </div>
@@ -72,6 +72,12 @@ var app = new Vue({
       this.canvas.addEventListener('mousedown', e => {
         this.x = e.offsetX;
         this.y = e.offsetY;
+
+        // You cannot draw if you are guessing
+        if(!this.word.match('[a-zA-Z]')){
+          return;
+        }
+
         this.isDrawing = true;
       });
 
@@ -125,6 +131,15 @@ var app = new Vue({
             this.word = this.word.replace(/[a-zA-Z0-9]/g, "_ ");
             console.log(this.word)
           }
+
+          this.clearCanvas()
+          this.displaymessage('New round started', 'Game', true)
+        } else if (msg.type === "system") {
+          if (msg.msg === 'correct'){
+            this.displaymessage('CORRECT!!! You guessed the correct word', 'Game', true)
+          }
+
+          this.displaymessage('The word was guessed by another player. The correct word was: ' + msg.real_word, 'Game', true)
         }
         console.log(msg)
       }.bind(this)
@@ -141,6 +156,9 @@ var app = new Vue({
       const copy = JSON.parse(JSON.stringify(val))
       copy.id = this.id
       this.connection.send(JSON.stringify(copy))
+    },
+    clearCanvas(){
+      this.ctx.clearRect(0, 0, 1000, 1000);
     },
     drawLine(x1, y1, x2, y2, color, send = true) {
       this.ctx.beginPath();
@@ -173,14 +191,16 @@ var app = new Vue({
       this.send({
         type: "msg",
         msg: this.currentMessage,
+        msgtype:this.word.match('[a-zA-Z]')?'chat':'guess',
       })
       this.displaymessage(this.currentMessage, this.id)
       this.currentMessage = ""
     },
-    displaymessage(msg, id) {
+    displaymessage(msg, id, system=false) {
       this.messages.unshift({
         msg,
         id,
+        color:system?'green':'black',
       })
     }
   },
@@ -199,7 +219,7 @@ var app = new Vue({
 
 .chat-history {
   overflow-y: scroll;
-  height: 600px;
+  height: 400px;
 }
 </style>
 

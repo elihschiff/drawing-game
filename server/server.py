@@ -48,11 +48,27 @@ class SimpleChat(WebSocket):
         if game['drawer'] == None:
             getwords()
 
+        if data['type'] == "msg" and data['msgtype'] == 'guess' and data['msg'] == game['word']:
+            self.sendMessage(json.dumps({
+                'type':'system',
+                'msg':'correct'
+            }))
+            for client in clients:
+                if client != self:
+                    client.sendMessage(json.dumps({
+                        'type':'system',
+                        'msg':'guessed',
+                        'real_word':game['word'],
+                    }))
+            getwords()
+            return
+
 
         if data["type"] == "connected":
             if data["id"] not in game["points"]:
                 game["points"][data["id"]] = 0
             return
+
 
         for client in clients:
             if client != self:
