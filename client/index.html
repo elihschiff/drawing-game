@@ -23,7 +23,10 @@
           <input type="text" placeholder="Enter guess here" spellcheck="true" @keyup.enter="sendmessage()" v-model="currentMessage">
           <div class="chat-history">
             <div v-for="msg in messages">
-              <b>{{msg.id}}:</b><br> <p :style='{color:msg.color, "font-weight":msg.color==="green"?"bold":"null"}'>{{msg.msg}}<p><hr>
+              <b>{{msg.id}}:</b><br>
+              <p :style='{color:msg.color, "font-weight":msg.color==="green"?"bold":"null"}'>{{msg.msg}}
+              <p>
+                <hr>
             </div>
           </div>
         </div>
@@ -74,7 +77,7 @@ var app = new Vue({
         this.y = e.offsetY;
 
         // You cannot draw if you are guessing
-        if(!this.word.match('[a-zA-Z]')){
+        if (!this.word.match('[a-zA-Z]')) {
           return;
         }
 
@@ -121,11 +124,11 @@ var app = new Vue({
           }
         } else if (msg.type === "msg") {
           this.displaymessage(msg.msg, msg.id)
-        } else if (msg.type === "getwords"){
+        } else if (msg.type === "getwords") {
           // TODO allow user to pick their word
           this.word = msg.words[0]
           console.log(msg.drawer)
-          if(msg.drawer === false){
+          if (msg.drawer === false) {
             console.log(this.word)
             //TODO get spaces to work and show up nicely
             this.word = this.word.replace(/[a-zA-Z0-9]/g, "_ ");
@@ -135,7 +138,7 @@ var app = new Vue({
           this.clearCanvas()
           this.displaymessage('New round started', 'Game', true)
         } else if (msg.type === "system") {
-          if (msg.msg === 'correct'){
+          if (msg.msg === 'correct') {
             this.displaymessage('CORRECT!!! You guessed the correct word', 'Game', true)
           }
 
@@ -157,7 +160,7 @@ var app = new Vue({
       copy.id = this.id
       this.connection.send(JSON.stringify(copy))
     },
-    clearCanvas(){
+    clearCanvas() {
       this.ctx.clearRect(0, 0, 1000, 1000);
     },
     drawLine(x1, y1, x2, y2, color, send = true) {
@@ -191,16 +194,16 @@ var app = new Vue({
       this.send({
         type: "msg",
         msg: this.currentMessage,
-        msgtype:this.word.match('[a-zA-Z]')?'chat':'guess',
+        msgtype: this.word.match('[a-zA-Z]') ? 'chat' : 'guess',
       })
       this.displaymessage(this.currentMessage, this.id)
       this.currentMessage = ""
     },
-    displaymessage(msg, id, system=false) {
+    displaymessage(msg, id, system = false) {
       this.messages.unshift({
         msg,
         id,
-        color:system?'green':'black',
+        color: system ? 'green' : 'black',
       })
     }
   },
